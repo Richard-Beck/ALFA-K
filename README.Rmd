@@ -1,0 +1,55 @@
+---
+title: "README"
+author: "Richard J Beck"
+date: "`r Sys.Date()`"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "~/projects/008_birthrateLandscape/ALFA-K/")
+```
+
+ALFA-K takes longitudinal single cell sequencing data from an evolving cell population as input, then estimates a local fitness landscape encompassing thousands of karyotypes located near to the input data in karyotype space. This repository contains source code and examples for running ALFA-K, as well as an Agent Based Model (ABM) which simulates evolving cell populations using fitness landscapes estimated by ALFA-K.
+
+The repository is organized as follows:
+
+```{r,echo=F,include=F}
+
+path <- c(
+    "ALFA-K/ABM/agent based model source code", 
+    "ALFA-K/examples/example_0/visualizing karyotype frequencies and ALFA-K fits", 
+    "ALFA-K/examples/example_1/basics of running ABM and fitting landscapes", 
+    "ALFA-K/examples/example_2/cross validation procedure for ALFA-K landscapes", 
+    "ALFA-K/example_data/example datasets", 
+    "ALFA-K/utils/ALFA-K source code and utility functions"
+)
+
+
+library(data.tree); library(plyr)
+
+x <- lapply(strsplit(path, "/"), function(z) as.data.frame(t(z)))
+x <- rbind.fill(x)
+x$pathString <- apply(x, 1, function(x) paste(trimws(na.omit(x)), collapse="/"))
+(mytree <- data.tree::as.Node(x))
+
+```
+
+```{r,include=F}
+mytree
+
+```
+
+The ABM requires compilation before use. E.g. to compile with the GCC C++ compiler, change to ALFA-K root directory and run:
+
+```{r,eval=F}
+g++ ./ABM/main.cpp -o ./ABM/bin/ABM -std=c++17
+```
+
+
+For more details on the methods, see:
+
+Beck, Richard J., and Noemi Andor. "Local Adaptive Mapping of Karyotype Fitness Landscapes." bioRxiv (2023): 2023-07.
+
+ 
