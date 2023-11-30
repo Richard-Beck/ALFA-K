@@ -2,7 +2,9 @@
 title: "Example 1"
 author: "Richard J Beck"
 date: "2023-10-10"
-output: html_document
+output:
+  md_document:
+    variant: markdown_github
 ---
 
 Ensure ABM is compiled, root dir is set to correct location of ALFA-K, and the cpp_source is correctly set to the path of the ABM executable file.
