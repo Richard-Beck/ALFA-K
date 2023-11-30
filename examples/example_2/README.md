@@ -5,36 +5,6 @@ validate ALFA-K if no ground truth data is available.
 source("utils/ALFA-K.R")
 ```
 
-    ## Warning: package 'lhs' was built under R version 4.1.3
-
-    ## Warning: package 'fields' was built under R version 4.1.3
-
-    ## Loading required package: spam
-
-    ## Warning: package 'spam' was built under R version 4.1.3
-
-    ## Spam version 2.9-0 (2022-07-11) is loaded.
-    ## Type 'help( Spam)' or 'demo( spam)' for a short introduction 
-    ## and overview of this package.
-    ## Help for individual functions is also obtained by adding the
-    ## suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
-
-    ## 
-    ## Attaching package: 'spam'
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     backsolve, forwardsolve
-
-    ## Loading required package: viridis
-
-    ## Warning: package 'viridis' was built under R version 4.1.2
-
-    ## Loading required package: viridisLite
-
-    ## 
-    ## Try help(fields) to get started.
-
 Below are copy number calls for hTERTa data set already formatted for
 alfa-k. Note the units of “time” are passage numbers (we do not know how
 long the passages were). We assumed passage length of 5 days, hence dt
@@ -150,4 +120,4 @@ plot(df$pred,xfq$f_est)
 cor(df$pred,xfq$f_est)
 ```
 
-    ## [1] 0.7006568
+    ## [1] 0.6914932

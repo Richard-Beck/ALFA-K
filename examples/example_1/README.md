@@ -9,39 +9,6 @@ cpp_source <- "ABM/bin/ABM"
 ``` r
 source("utils/sim_setup_functions.R")
 source("utils/ALFA-K.R")
-```
-
-    ## Warning: package 'lhs' was built under R version 4.1.3
-
-    ## Warning: package 'fields' was built under R version 4.1.3
-
-    ## Loading required package: spam
-
-    ## Warning: package 'spam' was built under R version 4.1.3
-
-    ## Spam version 2.9-0 (2022-07-11) is loaded.
-    ## Type 'help( Spam)' or 'demo( spam)' for a short introduction 
-    ## and overview of this package.
-    ## Help for individual functions is also obtained by adding the
-    ## suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
-
-    ## 
-    ## Attaching package: 'spam'
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     backsolve, forwardsolve
-
-    ## Loading required package: viridis
-
-    ## Warning: package 'viridis' was built under R version 4.1.2
-
-    ## Loading required package: viridisLite
-
-    ## 
-    ## Try help(fields) to get started.
-
-``` r
 dir.create("examples/example_1/sim_output")
 ```
 
@@ -50,17 +17,24 @@ Setup ABM simulation with random fitness landscape
 The gen_replicate() function can be used to setup the directory
 structure required to run an ABM simulation.
 
-Arguments
+**Arguments**
 
-Nchrom: number of chromosomes for each cell in simulation wavelength:
-controls complexity of GRF fitness landscape. Lower wavelengths are more
-complex. sweep_dir: output directory for sim cpp_source: path to ABM
-executable p=0.00005: missegregation rate
+**Nchrom:** number of chromosomes for each cell in simulation
 
-Value
+**wavelength:** controls complexity of GRF fitness landscape. Lower
+wavelengths are more complex.
 
-cpp_run_cmd: command necessesary to run ABM simulation sweep_id: name of
-output folder that has been generated
+**sweep_dir:** output directory for sim
+
+**cpp_source:** path to ABM executable
+
+**p:** missegregation rate
+
+**Value**
+
+**cpp_run_cmd:** command necessesary to run ABM simulation
+
+**sweep_id:** name of output folder that has been generated
 
 The following chunk sets up and runs ABM simulation:
 
@@ -73,8 +47,6 @@ sweep_dir <- "examples/example_1/sim_output/"
 info <-  gen_replicate(Nchrom=Nchrom,wavelength = wavelength,p = misrate,sweep_dir = sweep_dir,cpp_source = cpp_source)
 system(info$cpp_run_cmd,show.output.on.console = F)
 ```
-
-    ## [1] 0
 
 The ABM simulation directory folder contains several files and folders.
 The config file contains a lot of the information about the ABM sim. The
@@ -137,7 +109,7 @@ output_subdir <- paste(output_dir,list.files(output_dir)[1],sep="/")
 head(list.files(output_subdir))
 ```
 
-    ## [1] "00000.csv" "00074.csv" "00189.csv" "00302.csv" "00404.csv" "00491.csv"
+    ## [1] "00000.csv" "00059.csv" "00151.csv" "00243.csv" "00332.csv" "00417.csv"
 
 ``` r
 pop.size <- readLines(paste0(output_subdir,"/summary.txt"))
@@ -151,60 +123,49 @@ Process output from ABM simulation:
 The proc_sim() function compiles output from the ABM simulation into a
 format amenable to further analysis
 
-Arguments
+**Arguments**
 
-dir: directory containing csv output files from ABM simulation times:
-numeric vector containing times to sample output from ABM simulation.
-For each user-supplied time supplied, the closest timepoint among ABM
-csv output files is selected.
+**dir:** directory containing csv output files from ABM simulation
 
-Value
+**times:** numeric vector containing times to sample output from ABM
+simulation. For each user-supplied time supplied, the closest timepoint
+among ABM csv output files is selected.
 
-x: matrix with rows corresponding to karyotypes and columns
+**Value**
+
+**x:** matrix with rows corresponding to karyotypes and columns
 corresponding to timepoints. Values indicate the number of sampled
 cells.
 
-pop.fitness: growth rate of the sampled ABM population at each sampled
-timepoint
+**pop.fitness:** growth rate of the sampled ABM population at each
+sampled timepoint
 
-dt: conversion factor between output timepoints and time in days. E.g.
-if dt=0.1, timepoint 400 = 40 days.
+**dt:** conversion factor between output timepoints and time in days.
+E.g. if dt=0.1, timepoint 400 = 40 days.
 
-clone.fitness: fitness of each karyotype in matrix x. values are ordered
-according to rows of x.
+**clone.fitness:** fitness of each karyotype in matrix x. values are
+ordered according to rows of x.
 
 ``` r
 x <- proc_sim("data/htert/train/00000/",times = seq(0,2800,400))
-```
-
-    ## Warning in proc_sim("data/htert/train/00000/", times = seq(0, 2800, 400)): NAs
-    ## introduced by coercion
-
-``` r
 x <- proc_sim(dir=output_subdir,times = seq(0,2800,400))
-```
-
-    ## Warning in proc_sim(dir = output_subdir, times = seq(0, 2800, 400)): NAs
-    ## introduced by coercion
-
-``` r
 print(head(x$x[order(rowSums(x$x),decreasing = T),]))
 ```
 
-    ##                                                0 404 785 1170 1589 1974 2404
-    ## 2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 1038 520   0    0    0    0    0
-    ## 2.2.2.2.2.3.3.3.3.1.1.2.3.1.4.2.2.4.2.4.2.4    0   0   0   16  355  582  331
-    ## 2.2.2.2.1.3.3.3.3.1.1.2.3.1.4.2.2.4.2.4.2.4    0   0   0    1   75  269  390
-    ## 2.2.2.2.2.3.3.3.3.1.1.2.3.2.3.3.1.3.3.3.1.3    0   4 319  386   71    1    0
-    ## 2.2.2.2.2.2.2.2.2.2.2.2.2.2.3.3.1.3.4.4.2.4    0   2 180  361   83    1    0
-    ## 2.2.3.1.1.1.2.2.2.2.2.2.2.3.1.3.3.1.1.3.3.3    0 206 247    3    1    0    0
-    ##                                             2774
+    ##                                               0 417 769 1200 1615 2008 2384
+    ## 2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 996 545   2    0    0    0    0
+    ## 1.2.2.2.1.1.2.2.1.1.1.2.2.2.2.2.2.2.2.2.2.2   0   0   1    4  125  476  495
+    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1.1   0   2 240  566  341   47    0
+    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2   0 121 278   16    2    0    0
+    ## 2.2.2.2.1.1.1.3.1.2.2.2.2.2.2.3.3.2.2.2.1.1   0   0   0    0    2   58  127
+    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.3.2.2.2.1.2   0   1  63  133   87   16    2
+    ##                                             2809
     ## 2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2    0
-    ## 2.2.2.2.2.3.3.3.3.1.1.2.3.1.4.2.2.4.2.4.2.4  144
-    ## 2.2.2.2.1.3.3.3.3.1.1.2.3.1.4.2.2.4.2.4.2.4  343
-    ## 2.2.2.2.2.3.3.3.3.1.1.2.3.2.3.3.1.3.3.3.1.3    0
-    ## 2.2.2.2.2.2.2.2.2.2.2.2.2.2.3.3.1.3.4.4.2.4    0
-    ## 2.2.3.1.1.1.2.2.2.2.2.2.2.3.1.3.3.1.1.3.3.3    0
+    ## 1.2.2.2.1.1.2.2.1.1.1.2.2.2.2.2.2.2.2.2.2.2  260
+    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1.1    0
+    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2    0
+    ## 2.2.2.2.1.1.1.3.1.2.2.2.2.2.2.3.3.2.2.2.1.1  215
+    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.3.2.2.2.1.2    0
 
 Estimate fitness landscape:
 
@@ -230,10 +191,27 @@ fit <- alfak(x,min_obs = 20)
     ## [1] 17
     ## [1] 18
     ## [1] 19
+    ## [1] 20
+    ## [1] 21
+    ## [1] 22
+    ## [1] 23
+    ## [1] 24
+    ## [1] 25
+    ## [1] 26
+    ## [1] 27
+    ## [1] 28
+    ## [1] 29
+    ## [1] 30
+    ## [1] 31
+    ## [1] 32
+    ## [1] 33
+    ## [1] 34
+    ## [1] 35
+    ## [1] 36
     ## Warning: 
     ## Grid searches over lambda (nugget and sill variances) with  minima at the endpoints: 
     ##   (REML) Restricted maximum likelihood 
-    ##    minimum at  right endpoint  lambda  =  0.03813737 (eff. df= 744.8 )
+    ##    minimum at  right endpoint  lambda  =  0.03627878 (eff. df= 1277.75 )
 
 ``` r
 xmat <- do.call(rbind,lapply(rownames(fit$xo), function(i){
@@ -269,8 +247,6 @@ writeLines(new_config,new_config_path)
 system(paste(cpp_source,new_config_path),show.output.on.console = F)
 ```
 
-    ## [1] 0
-
 Run ABM with custom karyotype composition
 
 ``` r
@@ -294,5 +270,3 @@ custom_config_path <- paste0(sweep_dir,info$sweep_id,"/custom_pop_config.txt")
 writeLines(config,custom_config_path)
 system(paste(cpp_source,custom_config_path),show.output.on.console = F)
 ```
-
-    ## [1] 0

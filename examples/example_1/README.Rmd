@@ -16,7 +16,7 @@ knitr::opts_knit$set(root.dir = "~/projects/008_birthrateLandscape/ALFA-K/")
 cpp_source <- "ABM/bin/ABM"
 ```
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 source("utils/sim_setup_functions.R")
 source("utils/ALFA-K.R")
 dir.create("examples/example_1/sim_output")
@@ -25,20 +25,26 @@ Setup ABM simulation with random fitness landscape
 
 The gen_replicate() function can be used to setup the directory structure required to run an ABM simulation. 
 
-Arguments
+**Arguments**
 
-Nchrom: number of chromosomes for each cell in simulation
-wavelength: controls complexity of GRF fitness landscape. Lower wavelengths are more complex. sweep_dir: output directory for sim
-cpp_source: path to ABM executable
-p=0.00005: missegregation rate
+**Nchrom:** number of chromosomes for each cell in simulation
 
-Value
+**wavelength:** controls complexity of GRF fitness landscape. Lower wavelengths are more complex. 
 
-cpp_run_cmd: command necessesary to run ABM simulation
-sweep_id: name of output folder that has been generated
+**sweep_dir:** output directory for sim
+
+**cpp_source:** path to ABM executable
+
+**p:** missegregation rate
+
+**Value**
+
+**cpp_run_cmd:** command necessesary to run ABM simulation
+
+**sweep_id:** name of output folder that has been generated
 
 The following chunk sets up and runs ABM simulation:
-```{r}
+```{r, results=FALSE}
 Nchrom <- 22
 wavelength <- 0.8
 misrate <- 0.00005
@@ -80,25 +86,26 @@ Process output from ABM simulation:
 
 The proc_sim() function compiles output from the ABM simulation into a format amenable to further analysis
 
-Arguments
+**Arguments**
 
-dir: directory containing csv output files from ABM simulation
-times: numeric vector containing times to sample output from ABM simulation. For each user-supplied time supplied, the closest timepoint among ABM csv output files is selected. 
+**dir:** directory containing csv output files from ABM simulation
 
-Value
+**times:** numeric vector containing times to sample output from ABM simulation. For each user-supplied time supplied, the closest timepoint among ABM csv output files is selected. 
 
-x: matrix with rows corresponding to karyotypes and columns corresponding to timepoints. Values indicate the number of sampled cells. 
+**Value**
 
-pop.fitness: growth rate of the sampled ABM population at each sampled timepoint 
+**x:** matrix with rows corresponding to karyotypes and columns corresponding to timepoints. Values indicate the number of sampled cells. 
 
-dt: conversion factor between output timepoints and time in days. E.g. if dt=0.1, timepoint 400 = 40 days. 
+**pop.fitness:** growth rate of the sampled ABM population at each sampled timepoint 
 
-clone.fitness: fitness of each karyotype in matrix x. values are ordered according to rows of x. 
+**dt:** conversion factor between output timepoints and time in days. E.g. if dt=0.1, timepoint 400 = 40 days. 
+
+**clone.fitness:** fitness of each karyotype in matrix x. values are ordered according to rows of x. 
 
 
 
 
-```{r}
+```{r,message=FALSE, warning=FALSE}
 x <- proc_sim("data/htert/train/00000/",times = seq(0,2800,400))
 x <- proc_sim(dir=output_subdir,times = seq(0,2800,400))
 print(head(x$x[order(rowSums(x$x),decreasing = T),]))
@@ -106,7 +113,7 @@ print(head(x$x[order(rowSums(x$x),decreasing = T),]))
 
 Estimate fitness landscape:
 
-```{r}
+```{r,message=FALSE, warning=FALSE}
 
 fit <- alfak(x,min_obs = 20)
 xmat <- do.call(rbind,lapply(rownames(fit$xo), function(i){
@@ -128,7 +135,7 @@ write.table(fscape, fitted_landscape_path,row.names = FALSE,col.names=FALSE,sep=
 ```
 
 Generate a new config file to use fitted landscape. Run ABM.
-```{r}
+```{r, results=FALSE}
 
 base_config <- readLines(paste0(sweep_dir,info$sweep_id,"/config.txt"))
 new_config <- modify_config("fitness_landscape_type","krig",base_config)
@@ -145,7 +152,7 @@ system(paste(cpp_source,new_config_path),show.output.on.console = F)
 
 Run ABM with custom karyotype composition
 
-```{r}
+```{r, results=FALSE}
 custom_pop_output <- paste0(sweep_dir,info$sweep_id,"/custom_pop")
 
 dir.create(custom_pop_output)

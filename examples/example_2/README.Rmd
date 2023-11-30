@@ -13,7 +13,7 @@ This example illustrates a leave-one-out cross validation procedure to validate 
 knitr::opts_knit$set(root.dir = "~/projects/008_birthrateLandscape/ALFA-K/")
 ```
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 source("utils/ALFA-K.R")
 
 ```
@@ -24,13 +24,13 @@ head(x$x)
 print(x$dt)
 ```
 Run alfa-k on data
-```{r}
+```{r,warning=FALSE,message=FALSE}
 
 opt <- alfak(x,min_obs = 25)
 
 ```
 Validation
-```{r}
+```{r,warning=FALSE,message=FALSE}
 
 ## recover frequent clones
 xfq <- opt$xo[opt$xo$id=="fq",]
