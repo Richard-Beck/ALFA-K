@@ -7,31 +7,36 @@ output:
     variant: markdown_github
 ---
 
-Visualizing karyotype frequencies in the input data and overlay ALFA-K fit results. 
+Visualizing karyotype frequencies in the input data and overlay ALFA-K fit results.
 
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = "~/projects/008_birthrateLandscape/ALFA-K/")
 ```
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 library(ggplot2)
 source("utils/visualisation_functions.R")
 ```
-melt_for_plotting plots karyotype frequencies over time, with option to overlay alfa-k fitted frequency estimates. See example_1 for more info on generating suitable input data for this function.
 
-Arguments
+melt_for_plotting() plots karyotype frequencies over time, with option to overlay alfa-k fitted frequency estimates. See example_1 for more info on generating suitable input data for this function.
 
-data_obj: karyotype frequency data formatted as output from proc_sim() function
-nclones: number of karyotypes to plot (sorted by descending frequency in input data)
-fit_obj: (optional) fit resulting from alfak() function
+**Arguments**
 
-Value
+**data_obj:** karyotype frequency data formatted as output from proc_sim() function
+
+**nclones:** number of karyotypes to plot (sorted by descending frequency in input data)
+
+**fit_obj:** (optional) fit resulting from alfak() function
+
+**Value**
+
 melt_for_plotting returns a list that is convenient for input into ggplot
-$data: data frame containing karyotype frequencies from input data
-$fit: either NULL or a dataframe containing karyotype frequency estimates from ALFA-K
+
+**\$data:** data frame containing karyotype frequencies from input data
+
+**\$fit:** either NULL or a dataframe containing karyotype frequency estimates from ALFA-K
 
 example:
-
 
 ```{r}
 

@@ -3,28 +3,31 @@ fit results.
 
 ``` r
 library(ggplot2)
-```
-
-    ## Warning: package 'ggplot2' was built under R version 4.1.3
-
-``` r
 source("utils/visualisation_functions.R")
 ```
 
-melt_for_plotting plots karyotype frequencies over time, with option to
-overlay alfa-k fitted frequency estimates. See example_1 for more info
-on generating suitable input data for this function.
+melt_for_plotting() plots karyotype frequencies over time, with option
+to overlay alfa-k fitted frequency estimates. See example_1 for more
+info on generating suitable input data for this function.
 
-Arguments
+**Arguments**
 
-data_obj: karyotype frequency data formatted as output from proc_sim()
-function nclones: number of karyotypes to plot (sorted by descending
-frequency in input data) fit_obj: (optional) fit resulting from alfak()
-function
+**data_obj:** karyotype frequency data formatted as output from
+proc_sim() function
 
-Value melt_for_plotting returns a list that is convenient for input into
-ggplot $data: data frame containing karyotype frequencies from input
-data $fit: either NULL or a dataframe containing karyotype frequency
+**nclones:** number of karyotypes to plot (sorted by descending
+frequency in input data)
+
+**fit_obj:** (optional) fit resulting from alfak() function
+
+**Value**
+
+melt_for_plotting returns a list that is convenient for input into
+ggplot
+
+**$data:** data frame containing karyotype frequencies from input data
+
+**$fit:** either NULL or a dataframe containing karyotype frequency
 estimates from ALFA-K
 
 example:
