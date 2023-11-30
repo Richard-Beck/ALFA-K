@@ -36,9 +36,8 @@ x$pathString <- apply(x, 1, function(x) paste(trimws(na.omit(x)), collapse="/"))
 
 ```
 
-```{r,include=F}
-mytree
-
+```{r,echo=F}
+print(mytree)
 ```
 
 The ABM requires compilation before use. E.g. to compile with the GCC C++ compiler, change to ALFA-K root directory and run:
