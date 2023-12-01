@@ -7,7 +7,7 @@ output:
     variant: markdown_github
 ---
 
-Visualizing karyotype frequencies in the input data and overlay ALFA-K fit results.
+**This example shows how to visualize karyotype frequencies from the input data and overlay ALFA-K fit results on the plots.**
 
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = "~/projects/008_birthrateLandscape/ALFA-K/")

@@ -7,7 +7,7 @@ output:
     variant: markdown_github
 ---
 
-This example illustrates a leave-one-out cross validation procedure to validate ALFA-K if no ground truth data is available.
+**This example illustrates a leave-one-out cross validation procedure to validate ALFA-K if no ground truth data is available.**
 
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = "~/projects/008_birthrateLandscape/ALFA-K/")
@@ -24,13 +24,13 @@ head(x$x)
 print(x$dt)
 ```
 Run alfa-k on data
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,result=FALSE}
 
 opt <- alfak(x,min_obs = 25)
 
 ```
 Validation
-```{r,warning=FALSE,message=FALSE}
+```{r,warning=FALSE,message=FALSE,result=FALSE}
 
 ## recover frequent clones
 xfq <- opt$xo[opt$xo$id=="fq",]

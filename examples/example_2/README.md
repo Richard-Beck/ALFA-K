@@ -1,5 +1,5 @@
-This example illustrates a leave-one-out cross validation procedure to
-validate ALFA-K if no ground truth data is available.
+**This example illustrates a leave-one-out cross validation procedure to
+validate ALFA-K if no ground truth data is available.**
 
 ``` r
 source("utils/ALFA-K.R")
@@ -120,4 +120,4 @@ plot(df$pred,xfq$f_est)
 cor(df$pred,xfq$f_est)
 ```
 
-    ## [1] 0.6914932
+    ## [1] 0.7071852

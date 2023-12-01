@@ -1,6 +1,10 @@
-Ensure ABM is compiled, root dir is set to correct location of ALFA-K,
-and the cpp_source is correctly set to the path of the ABM executable
-file.
+**This example illustrates how to fit a landscape using ALFA-K and run
+an ABM simulation using the fitted landscape**
+
+We will fit ALFA-K to data generated using the ABM simulated with a
+random artificial fitness landscape. First, ensure ABM is compiled, root
+dir is set to correct location of ALFA-K, and the cpp_source is
+correctly set to the path of the ABM executable file.
 
 ``` r
 cpp_source <- "ABM/bin/ABM"
@@ -109,7 +113,7 @@ output_subdir <- paste(output_dir,list.files(output_dir)[1],sep="/")
 head(list.files(output_subdir))
 ```
 
-    ## [1] "00000.csv" "00059.csv" "00151.csv" "00243.csv" "00332.csv" "00417.csv"
+    ## [1] "00000.csv" "00069.csv" "00176.csv" "00282.csv" "00387.csv" "00485.csv"
 
 ``` r
 pop.size <- readLines(paste0(output_subdir,"/summary.txt"))
@@ -152,20 +156,20 @@ x <- proc_sim(dir=output_subdir,times = seq(0,2800,400))
 print(head(x$x[order(rowSums(x$x),decreasing = T),]))
 ```
 
-    ##                                               0 417 769 1200 1615 2008 2384
-    ## 2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 996 545   2    0    0    0    0
-    ## 1.2.2.2.1.1.2.2.1.1.1.2.2.2.2.2.2.2.2.2.2.2   0   0   1    4  125  476  495
-    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1.1   0   2 240  566  341   47    0
-    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2   0 121 278   16    2    0    0
-    ## 2.2.2.2.1.1.1.3.1.2.2.2.2.2.2.3.3.2.2.2.1.1   0   0   0    0    2   58  127
-    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.3.2.2.2.1.2   0   1  63  133   87   16    2
-    ##                                             2809
+    ##                                                0 387 813 1183 1584 1970 2404
+    ## 2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 1035 761  13    0    0    0    0
+    ## 1.1.2.2.2.2.2.2.2.3.2.2.2.2.2.2.2.2.1.2.2.2    0   0   4  210  467  332   87
+    ## 1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2    0  37 593  223    8    0    0
+    ## 1.1.2.2.2.2.2.2.1.4.2.2.2.2.2.2.2.2.1.2.2.2    0   0   0    0    3   29  172
+    ## 1.1.2.2.2.2.2.2.2.3.2.2.2.2.2.2.2.1.1.1.1.1    0   0   7   78  127  116   24
+    ## 1.1.2.2.2.2.2.2.2.4.2.2.2.3.2.2.2.2.1.2.2.2    0   0   0    0   10   54  149
+    ##                                             2817
     ## 2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2    0
-    ## 1.2.2.2.1.1.2.2.1.1.1.2.2.2.2.2.2.2.2.2.2.2  260
-    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1.1    0
-    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2    0
-    ## 2.2.2.2.1.1.1.3.1.2.2.2.2.2.2.3.3.2.2.2.1.1  215
-    ## 2.2.2.2.1.1.2.2.2.2.2.2.2.2.2.2.3.2.2.2.1.2    0
+    ## 1.1.2.2.2.2.2.2.2.3.2.2.2.2.2.2.2.2.1.2.2.2    6
+    ## 1.1.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2    0
+    ## 1.1.2.2.2.2.2.2.1.4.2.2.2.2.2.2.2.2.1.2.2.2  165
+    ## 1.1.2.2.2.2.2.2.2.3.2.2.2.2.2.2.2.1.1.1.1.1    1
+    ## 1.1.2.2.2.2.2.2.2.4.2.2.2.3.2.2.2.2.1.2.2.2   85
 
 Estimate fitness landscape:
 
@@ -206,12 +210,10 @@ fit <- alfak(x,min_obs = 20)
     ## [1] 32
     ## [1] 33
     ## [1] 34
-    ## [1] 35
-    ## [1] 36
     ## Warning: 
     ## Grid searches over lambda (nugget and sill variances) with  minima at the endpoints: 
     ##   (REML) Restricted maximum likelihood 
-    ##    minimum at  right endpoint  lambda  =  0.03627878 (eff. df= 1277.75 )
+    ##    minimum at  right endpoint  lambda  =  0.03672803 (eff. df= 1223.6 )
 
 ``` r
 xmat <- do.call(rbind,lapply(rownames(fit$xo), function(i){

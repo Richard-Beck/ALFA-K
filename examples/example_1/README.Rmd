@@ -7,7 +7,9 @@ output:
     variant: markdown_github
 ---
 
-Ensure ABM is compiled, root dir is set to correct location of ALFA-K, and the cpp_source is correctly set to the path of the ABM executable file.
+**This example illustrates how to fit a landscape using ALFA-K and run an ABM simulation using the fitted landscape**
+
+We will fit ALFA-K to data generated using the ABM simulated with a random artificial fitness landscape. First, ensure ABM is compiled, root dir is set to correct location of ALFA-K, and the cpp_source is correctly set to the path of the ABM executable file.
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = "~/projects/008_birthrateLandscape/ALFA-K/")
 ```

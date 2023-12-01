@@ -1,5 +1,5 @@
-Visualizing karyotype frequencies in the input data and overlay ALFA-K
-fit results.
+**This example shows how to visualize karyotype frequencies from the
+input data and overlay ALFA-K fit results on the plots.**
 
 ``` r
 library(ggplot2)
