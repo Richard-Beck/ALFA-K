@@ -207,7 +207,7 @@ optim_neighbor_fitness <- function(f,tp,iflux,ftp,sdy,u,tt,pop_size,f_est,dt){
   ux <- approx(tp,xtp,xout=tt)$y
   ux <- pmin(ux,0.9999)
   deltaf <- abs(f-f_est)
-  negll <- c(-dbinom(u,pop_size,prob=ux,log=T), -dnorm(deltaf,mean=0,sd=sdy,log=T))
+  negll <- c(-dbinom(as.numeric(u),pop_size,prob=ux,log=T), -dnorm(deltaf,mean=0,sd=sdy,log=T))
   negll[!is.finite(negll)] <- 10^9## to prevent warnings when probability is zero
   sum(negll)
 }
