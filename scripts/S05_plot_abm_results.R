@@ -9,9 +9,9 @@ ensure_packages(pkgs)
 source("R/utils_theme.R")
 source("R/utils_karyo.R")
 
-
-common_theme <- make_base_theme()
-
+base_text_size <- 5
+common_theme <- make_base_theme("classic",base_text_size)
+minimal_theme <- make_base_theme("minimal",base_text_size)
 project_forward_log <- function(x0, f, timepoints) {
   K <- length(x0)
   out <- matrix(NA, nrow = K, ncol = length(timepoints))
@@ -361,7 +361,7 @@ plot_pf_alluvium <- function(dfl) {
                  "axis5" = expression(R^2 > 0)),
       limits = c("axis1", "axis2", "axis3", "axis4", "axis5"),
       expand = c(0.1, 0.1)) +
-    theme_minimal() + common_theme +
+    minimal_theme +
     theme(
       axis.title = element_blank(),
       axis.text.y = element_blank(),
@@ -484,18 +484,18 @@ plots$p4b <- plot_p4b(dfp, nulldf)
 plots$pf   <- plot_pf_alluvium(dfl)
 plots$p2b  <- plot_p2b_alluvium(dfl)
 
-topr <- cowplot::plot_grid(plots$pa,plots$pb,labels=c("A","B"), label_size = 10,rel_widths = c(2.5,1))
-midrt <- cowplot::plot_grid(plots$pe,plots$pd,labels=c("D","E"), label_size = 10,nrow=2)
-midr <- cowplot::plot_grid(plots$pc,midrt,labels=c("C",""), label_size = 10,nrow=1,rel_widths = c(2,3))
+topr <- cowplot::plot_grid(plots$pa,plots$pb,labels=c("A","B"), label_size = base_text_size+2,rel_widths = c(2.5,1))
+midrt <- cowplot::plot_grid(plots$pe,plots$pd,labels=c("D","E"), label_size = base_text_size+2,nrow=2)
+midr <- cowplot::plot_grid(plots$pc,midrt,labels=c("C",""), label_size = base_text_size+2,nrow=1,rel_widths = c(2,3))
 
-plt <- cowplot::plot_grid(topr,midr,plots$pf,labels=c("","","F"), label_size = 10,nrow=3,rel_heights = c(4,4,3))
-ggsave("figs/ABM_validation_p1.png",plt,width=6,height=7,units="in")
+plt <- cowplot::plot_grid(topr,midr,plots$pf,labels=c("","","F"), label_size = base_text_size+2,nrow=3,rel_heights = c(4,4,3))
+ggsave("figs/ABM_validation_p1.png",plt,width=150,height=175,units="mm",bg="white")
 ## Final output: a list of ggplot objects
 
-left <- cowplot::plot_grid(plots$p2a,plots$p2b,labels=c("A","B"), label_size = 10,nrow=2,rel_heights = c(3,4))
-plt <- cowplot::plot_grid(left,plots$p2c,nrow=1,labels=c("","C"), label_size = 10,rel_widths = c(3,2))
-ggsave("figs/ABM_validation_p2.png",plt,width=6,height=4,units="in")
+left <- cowplot::plot_grid(plots$p2a,plots$p2b,labels=c("A","B"), label_size = base_text_size+2,nrow=2,rel_heights = c(3,4))
+plt <- cowplot::plot_grid(left,plots$p2c,nrow=1,labels=c("","C"), label_size = base_text_size+2,rel_widths = c(3,2))
+ggsave("figs/ABM_validation_p2.png",plt,width=150,height=100,units="mm",bg="white")
 
-plt <- cowplot::plot_grid(plots$p4b,plots$p4a,labels=c("A","B"), label_size = 10,nrow=2)
-ggsave("figs/ABM_validation_p3.png",plt,width=4,height=4,units="in")
+plt <- cowplot::plot_grid(plots$p4b,plots$p4a,labels=c("A","B"), label_size = base_text_size+2,nrow=2)
+ggsave("figs/ABM_validation_p3.png",plt,width=150,height=100,units="mm",bg="white")
   

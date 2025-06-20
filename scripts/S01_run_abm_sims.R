@@ -1,30 +1,10 @@
 if(!basename(getwd())=="ALFA-K") stop("Ensure working directory set to ALFA-K root")
 source("R/utils_env.R")
+source("R/utils_karyo.R") ## for gen_randscape
 ensure_packages("parallel","alfakR","stringr")
 
 setup_and_run_abm <- function(rep_id,wavelength,outDir){
   library(alfakR)
-  
-  gen_randscape <- function(founder,Nwaves,scalef=NULL,wavelength=0.8){
-    if(is.null(scalef)) scalef <- 1/(pi*sqrt(Nwaves))
-    f0 <- 0
-    ## we want to have simulations where the diploid founder is fit enough to survive.
-    ## if scalef <- 1/(pi*sqrt(30))
-    ## then this would make the diploid cell in the top 10% fittest
-    ## clones:
-    while(f0<=0.4){
-      pk <- lapply(1:Nwaves, function(i){
-        pk <- sample((-10):20,length(founder),replace=T)
-      })
-      
-      d <- sapply(pk,function(ci) {
-        sqrt(sum((founder-ci)^2))
-      })
-      f0=sum(sin(d/wavelength)*scalef)
-      
-    }
-    do.call(rbind,pk)
-  }
   
   resample_sim <- function(sim, n_samples) {
     mat <- t(as.matrix(sim[,-1]))

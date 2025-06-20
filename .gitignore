@@ -3,6 +3,7 @@ data/main
 data/proc
 data/salehi
 data/processed
+data/archive_processed.tar.gz
 data/raw/ABM
 dev
 utils_old

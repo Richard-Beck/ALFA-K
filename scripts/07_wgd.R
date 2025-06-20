@@ -5,7 +5,8 @@ source("R/utils_karyo.R")
 source("R/utils_theme.R")
 source("R/utils_env.R")
 ensure_packages(c("ggplot2","pbapply","cowplot","lme4","lmerTest"))
-common_theme <- make_base_theme()
+base_text_size <- 5
+common_theme <- make_base_theme("classic",base_text_size)
 
 # ───────────────────────────────────────── 1 • helpers
 is_wgd   <- function(k, cut = 3) mean(k) > cut
@@ -225,8 +226,9 @@ pb <- ggplot(dffit, aes(dk, fitness)) +
   labs(x = "chromosomes altered", y = "fitness") +
   common_theme
 pb
+dfl$plot_id <- ifelse(dfl$traj == "trajA", "p53 k.o. A", "p53 k.o. B")
 pc <- ggplot(dfl, aes(df, colour = wgd_str)) +
-  facet_grid(rows=vars(traj))+
+  facet_grid(rows=vars(plot_id))+
   stat_ecdf(size = 0.8) +
   labs(x = "fitness effect", y = "cum. dist.") +
   scale_colour_manual(values = c("WGD-" = "#8E44AD", "WGD+" = "#00724D"), "") +
@@ -235,9 +237,10 @@ pc <- ggplot(dfl, aes(df, colour = wgd_str)) +
   theme(legend.position = "top")
 pc
 
-plt <- plot_grid(pa, pb, pc, nrow = 1, labels = LETTERS[1:3],rel_widths=c(2,3,2))
+plt <- plot_grid(pa, pb, pc, nrow = 1, labels = LETTERS[1:3],
+                 rel_widths=c(2,3,2),label_size = base_text_size+2)
 
-ggsave("figs/wgd.png", plt, width = 9, height = 3.2, units = "in")
+ggsave("figs/wgd.png", plt, width = 180, height = 60, units = "mm")
 
 # ───────────────────────────────────────── 6 • console summary
 cat("\n== Permutation KS test ==\n")
@@ -245,6 +248,3 @@ cat("Observed D =", round(obs_stat, 3), "; p_empirical =", perm_p, "\n")
 
 cat("\n== Piecewise landscape model (lmer) ==\n")
 print(summary(mod_piece)$coefficients)
-
-cat("\n== dk divergence model (weighted lmer) ==\n")
-print(summary(mod_div)$coefficients)
