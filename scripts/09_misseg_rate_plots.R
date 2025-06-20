@@ -2,9 +2,10 @@ if(!basename(getwd())=="ALFA-K") stop("Ensure working directory set to ALFA-K ro
 source("R/utils_env.R")
 source("R/utils_karyo.R")
 source("R/utils_theme.R")
+source("R/utils_lineage.R")
 ensure_packages(c("alfakR","ggplot2","ggrepel","rootSolve","reshape2","umap","cowplot")) ## is rootSolve actually used??
 base_text_size <- 5
-base_theme <- make_base_theme(base_text_size)
+base_theme <- make_base_theme("classic",base_text_size)
 
 make_example_data <- function(){
   chrmod <- function(time,state,parms){
@@ -115,8 +116,48 @@ make_example_data <- function(){
 }
 
 alfak_fit_dir <- "data/processed/salehi/alfak_outputs/"
-
 df <- readRDS("data/processed/salehi/steadyStatePredictions.Rds")
+m <- read.csv("data/raw/salehi/metadata.csv")
+
+# --- 1. helper ---------------------------------------------------------------
+heatmap_stat <- function(dfi){
+  kdom  <- apply(dfi, 2, which.max)
+  kvecs <- do.call(rbind, lapply(rownames(dfi)[kdom], s2v))
+  d_dom <- as.matrix(dist(kvecs, method = "manh"))[1, ]
+  data.frame(misrate = colnames(dfi), d_dom,  row.names = NULL)
+}
+
+# --- 2. stats per dataset ----------------------------------------------------
+delta_dom <- lapply(df, heatmap_stat)          # list the same length as df
+
+# --- 3. lineage distance matrix ---------------------------------------------
+li              <- readRDS("data/processed/salehi/lineages.Rds")
+lineage_members <- lapply(names(df), function(id) li[[id]]$ids)
+
+# symmetric pair-wise distance: mean of elements unique to either set
+dlin <- outer(seq_along(lineage_members), seq_along(lineage_members),
+              Vectorize(function(i, j){
+                a <- lineage_members[[i]]; b <- lineage_members[[j]]
+                sum(!(a %in% b))/length(unique(c(a,b)))
+              }))
+colnames(dlin) <- rownames(dlin) <- names(df)
+
+hc <- hclust(as.dist(dlin))                    # no error now
+row_order <- hc$labels[hc$order]              # the desired ordering
+
+# --- 4. long data frame for ggplot ------------------------------------------
+delta_long <- do.call(rbind, Map(function(x, id)
+  data.frame(lineage = id, x, stringsAsFactors = FALSE),
+  delta_dom, names(delta_dom)))
+delta_long$lineage <- factor(delta_long$lineage, levels = row_order)
+
+mis_levels               <- unique(as.character(delta_long$misrate))
+delta_long$misrate       <- factor(delta_long$misrate,
+                                   levels = mis_levels[order(as.numeric(mis_levels))])
+
+delta_long$cellLine <- sapply(as.character(delta_long$lineage),assign_labels,meta=m)
+
+
 
 nk <- lapply(df,rownames) |> unlist() |> unique() 
 cat("num, unique karyotypes:", length(nk), "\n")
@@ -181,7 +222,7 @@ df_list <- df[ids]
 x <- do.call(rbind,lapply(df_list,get_plot_data))
 x$grp <- x[,5]>x[,7]
 
-lut <- c("SA532\n(scenario B)","p53 k.o. A\n(scenario A)")
+lut <- c("p53 k.o. A\n(scenario A)","SA532\n(scenario B)")
 names(lut) <- ids
 x$fi <- lut[x$fi]
 xre <- reshape2::melt(x,id.vars=c("X1","X2","ploidy","fitness","fi","grp"))
@@ -259,10 +300,35 @@ p_freq <- ggplot(xfa,aes(x=p,y=frequency,color=grp,group=grp))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 p_freq
 
+highlight <- ids             # <- rows to outline, optional
+
+
+
+## plot ---------------------------------------------------
+p_screen <- ggplot(delta_long, aes(misrate, lineage, fill = d_dom)) +
+  facet_grid(                                   # keep facet strips
+    rows  = vars(cellLine),
+    scales = "free_y",                          # each panel gets its own y scale
+    space  = "free_y"                           # …and shrinks/grows to keep tile height constant
+  ) +
+  geom_raster() +
+  geom_tile(                                    # red boxes
+    data = subset(delta_long, lineage %in% highlight),
+    colour = "red", fill = NA, linewidth = 0.35
+  ) +
+  scale_y_discrete(breaks = highlight,labels=lut) +        # only label highlighted rows
+  scale_fill_viridis_c(expression(d[k]),trans = "sqrt") +
+  base_theme+
+  theme(axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line=element_blank())
+
+p_screen
+
 pleft <- cowplot::plot_grid(p_xmpl,p_umap,labels=LETTERS[c(1,3)],nrow=2, label_size = 10)
 pright <- cowplot::plot_grid(p_freq,p_fit_umap,p_fit,p_ploidy,labels=LETTERS[c(2,4:6)],ncol=1, label_size = 10)
 
 plt <- cowplot::plot_grid(pleft,pright,rel_widths = c(4,3))
 
-ggsave("figs/misseg.png",plt,width=6,height=5.25,units="in")
+ggsave("figs/misseg.png",plt,width=125,height=125,units="mm")
 

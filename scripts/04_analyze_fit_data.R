@@ -7,8 +7,18 @@ source("R/utils_theme.R")
 ensure_packages(c("ggplot2","tidyverse","igraph","tidygraph","ggraph","ggrepel","reshape2","transport","pbapply","cowplot"))
 base_text_size <- 5
 base_theme <- make_base_theme()
+void_theme <- make_base_theme("void",base_text_size)
 
+# 0. How many unique karyotypes did we predict?
+all_landscapes <- list.files("data/processed/salehi/alfak_outputs",pattern = "landscape.Rds",full.names = T,recursive = T)
+all_xval <- gsub("landscape.Rds","xval.Rds",all_landscapes)
+xv_scores <- sapply(all_xval,function(fi) {
+  if(!file.exists(fi)) return(-Inf)
+  return(readRDS(fi))
+})
 
+all_landscapes <- all_landscapes[xv_scores>0 & !is.na(xv_scores)]
+nk <- count_unique_k(all_landscapes)
 
 # 1. Read & filter prediction outputs
 procDir <- "data/processed/salehi/alfak_outputs_proc/"
@@ -90,20 +100,21 @@ z_bar$n <- n_count$n
 
 # 7. Salehi Plots
 p_salehi_lineage <- ggplot(z, aes(day, fwin)) +
-  facet_grid(rows = vars(metric)) +
+  facet_grid(cols = vars(metric)) +
   geom_line(aes(color = lineage, group = lineage)) +
   scale_x_continuous("time (days)") +
-  scale_y_continuous("fraction beating baseline") +
+  scale_y_continuous("frac. beat.\nbaseline") +
   base_theme+theme(
     legend.justification = c("left"),
     legend.key.width = unit(0.3, "lines"),
     legend.margin = margin(0, 0, 0, 0),
     legend.box.margin = margin(0, 0, 0, 0),
+    legend.position = "top",
     legend.background = element_rect(fill = "transparent", color = NA)
   )
 p_salehi_lineage
 p_bar <- ggplot(z_bar, aes(type, fwin)) +
-  facet_grid(rows = vars(metric)) +
+  facet_grid(cols = vars(metric)) +
   geom_col(color="black",fill="grey80")+
   coord_flip() +
   scale_y_continuous("fraction beating baseline", breaks = c(0, .5, 1)) +
@@ -122,8 +133,8 @@ ci <- sapply(1:nsamples,function(i){
 quantile(ci,probs=c(0.025,0.5,0.975))
 
 p_violin <- ggplot(x0, aes(pmax(-1,xv), ntrain, group=ntrain)) +
-  geom_violin() +
-  geom_jitter(width=0, height=0.2) +
+  geom_violin(size=0.5) +
+  geom_jitter(width=0, height=0.2,size=0.5) +
   scale_x_continuous("CV score") +
   scale_y_continuous("training\nsamples", breaks=2:9) +
   base_theme
@@ -265,7 +276,8 @@ z_pairs <- do.call(rbind, pbapply::pblapply(seq_len(ncol(combos_mm)), function(i
   })(x1,x2)
   data.frame(PDX1=mm$PDX_id[j1], PDX2=mm$PDX_id[j2], angle=angle, stringsAsFactors=FALSE)
 }))
-
+#last_char <- function(s) substr(s, nchar(s), nchar(s))
+#tmp <- z_euc[]
 # --- Plot: combined ECDF ---
 p_ecdf <- ggplot() +
   stat_ecdf(data=z_euc,      aes(angle,color="predicted"),     geom="step", size=1.5)   +
@@ -274,7 +286,7 @@ p_ecdf <- ggplot() +
   stat_ecdf(data=z_pairs,     aes(angle,color="unrelated"),     geom="step", size=1) +
   geom_line(data=nulldf,      aes(angle, CDF,color="theoretical"), size=1, linetype="dashed") +
   scale_color_manual("", values = c("#999999", "#E69F00", "#0072B2", "#009E73"))+
-  labs(x="Angle (degrees)", y="Cumulative\nProbability") +
+  labs(x="Angle (degrees)", y="cumulative\nfrequency") +
   base_theme+theme(legend.position=c(.99,0.01),
                    legend.justification = c("right", "bottom"),
                    legend.key.size = unit(0.5, "lines"),
@@ -287,7 +299,13 @@ source("R/utils_stats.R")
 
 pred_res  <- sphere_null_test(z_euc$angle, z_euc$type)  # predictions
 sis_res   <- sphere_null_test(y$value[y$metric=="angle"],
-                               y$lineage[y$metric=="angle"])      # sisters
+                               y$lineage[y$metric=="angle"])   
+sis_res_treat_match   <- sphere_null_test(y$value[y$metric=="angle"&y$on_treat%in%c("yy","nn")],
+                              y$lineage[y$metric=="angle"&y$on_treat%in%c("yy","nn")])  
+
+sis_res_treat_mismatch   <- sphere_null_test(y$value[y$metric=="angle"&y$on_treat%in%c("yn","ny")],
+                                          y$lineage[y$metric=="angle"&y$on_treat%in%c("yn","ny")])   
+# sisters
 unrel_res <- sphere_null_test(z_pairs$angle,
                               paste(pmin(z_pairs$PDX1, z_pairs$PDX2),
                                     pmax(z_pairs$PDX1, z_pairs$PDX2),
@@ -317,7 +335,7 @@ plot_df_ref$n  [is.na(plot_df_ref$n)]   <- 0
 plot_df_ref$lineage <- factor(plot_df_ref$lineage, levels=lineage_levels)
 
 p_ref_null <- ggplot(plot_df_ref, aes(lineage, win)) +
-  facet_grid(rows=vars(metric)) +
+  facet_grid(cols=vars(metric)) +
   geom_col(color="black",fill="grey80")+
   coord_flip() +
   scale_x_discrete("") +
@@ -334,11 +352,11 @@ z_bar_tmp <- z_bar_tmp[z_bar_tmp$metric=="cosine",]## removes duplicates,
 z_bar_tmp$n[z_bar_tmp$type=="forked"] <- z_bar_tmp$n[z_bar_tmp$type=="forked"]/2
 
 p_pass_count <- ggplot(z_bar_tmp, aes(lineage, n)) +
-  facet_grid(rows=vars(type)) +
+  facet_grid(cols=vars(type)) +
   geom_col(color="black",fill="grey80")+
   coord_flip() +
   scale_x_discrete("")+
-  scale_y_continuous("number of\npassages")+
+  scale_y_continuous("number of passages")+
   scale_fill_viridis_c("num.\nsub-lins.", option="magma") +
   base_theme
 p_pass_count
@@ -451,7 +469,7 @@ p_network <- ggraph(layout) +
                   aes(x = x, y = y), color = "white") +
   # Plot non-dummy nodes colored by xval
   geom_node_point(data = filter(layout, !dummy),
-                  aes(x = x, y = y, color = xval), size = 4) +
+                  aes(x = x, y = y, color = xval), size = 2) +
   scale_edge_color_manual(name = "",
                           values = c("y" = "red", "n" = "black", "dummy" = "white"),
                           labels = c("y" = "Treatment ON", "n" = "Treatment OFF", "dummy" = "")) +
@@ -460,7 +478,8 @@ p_network <- ggraph(layout) +
   geom_text(data = lineage_labels,
             aes(x = x_label, y = y_label, label = linlab),
             fontface = "bold",size = base_text_size / .pt,family = "sans") +
-  base_theme+
+  void_theme+
+  coord_equal()+
   theme(legend.position = c(0.0, 0.0),
         legend.justification = c("left", "bottom"),
         legend.margin = margin(0, 0, 0, 0),
@@ -489,9 +508,16 @@ plots <- list(
   pass_count=p_pass_count
 )
 
-piece_2 <- plot_grid(plots$salehi_lineage,plots$salehi_bar, plots$ref_null,plots$pass_count, labels = c("E","F","G","H"), nrow=1,rel_widths=c(3,2,2,2))
-piece_3 <- plot_grid(plots$salehi_violin,plots$salehi_ecdf,plots$salehi_scatter, labels = c("B","C", "D"),nrow=3)
+sec1 <- plot_grid(plots$salehi_violin,plots$salehi_ecdf,plots$salehi_scatter, labels = c("B","C", "D"),label_size = base_text_size+2,nrow=3)
+sec2 <- plot_grid(plots$network_dendro,sec1, labels = c("A","", ""),label_size = base_text_size+2,nrow=1,rel_widths = c(2,1))
 
+sec3 <- plot_grid(plots$salehi_lineage,plots$salehi_bar, plots$ref_null,plots$pass_count, labels = c("E","F","G","H"),
+                  label_size = base_text_size+2, nrow=4,rel_heights = c(3,2,2,2))
+
+plt <- plot_grid(sec2,sec3,nrow=1,rel_widths=c(2,1))
+
+ggsave("figs/salehi_validation.png",plot=plt,width=180,height=80,units="mm", 
+       bg = "white")
 # Create rows with adjustable relative widths
 top_row    <- plot_grid(plots$network_dendro, piece_3, labels = c("A", ""), rel_widths = c(2,1),nrow=1)
 
@@ -502,7 +528,6 @@ combined_plot <- plot_grid(
   rel_heights = c(3, 2) # Adjust these heights to fit your preference
 )
 
-ggsave("figs/salehi_validation.png",plot=combined_plot,width=8,height=8,units="in", 
-       bg = "white")
+
 
 

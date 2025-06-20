@@ -74,12 +74,14 @@ prediction_res <- function(dj,fi,mi){
   if(ncol(tru)!=2) stop("expected 2 columns here")
   yb[rownames(tru)] <- tru[,1]/sum(tru[,1])
   yt[rownames(tru)] <- tru[,2]/sum(tru[,2])
+  yt <- as.numeric(yt)
+  yb <- as.numeric(yb)
   if(!is.finite(sum(yt))) return(NULL)
   if(!is.finite(sum(yb))) return(NULL)
   
   
   df <- do.call(rbind,pbapply::pblapply(1:nrow(preds),function(tt){
-    yp <- preds[tt,]
+    yp <- as.numeric(preds[tt,])
     if(!is.finite(sum(yp))) return(NULL)
     
     

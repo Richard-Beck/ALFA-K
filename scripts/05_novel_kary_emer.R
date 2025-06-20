@@ -71,11 +71,14 @@ get_descendents_ids <- function(id,lineages,meta){
   
 }
 source("R/utils_karyo.R")
+source("R/utils_lineage.R")
 source("R/utils_env.R")
 source("R/utils_theme.R")
 ensure_packages(c("ggplot2","reshape2","dplyr","viridis","gridExtra","ggforce"))
 ## --- Global Theme Definition ---------------------
-common_theme <- make_base_theme()
+base_text_size <- 5
+common_theme <- make_base_theme("classic",base_text_size)
+void_theme <-  make_base_theme("void",base_text_size)
 
 REGENERATE_DATA <- FALSE ## this analysis takes about 5-10 mins
 if(REGENERATE_DATA){
@@ -142,15 +145,24 @@ res <- readRDS("data/processed/salehi/novel_kary_predictions.Rds")
 pthresh <- 0.05
 
 
+
 df <- res$df
 dfxmpl <- res$dfxmpl
+
+meta <- read.csv("data/raw/salehi/metadata.csv")
+df$pdx <- sapply(df$fi,assign_labels,meta=meta)
+print("unique training lineages:")
+print(table(df$pdx[!duplicated(df$fi)]))
+print(length(df$pdx[!duplicated(df$fi)]))
+print("unique test instances:")
+print(table(df$pdx[df$ids==df$ids[1]]))
+print(length(df$pdx[df$ids==df$ids[1]]))
 
 pc <- ggplot(dfxmpl,aes(x=d,y=frac,fill=id))+
   geom_col(position="dodge")+
   scale_fill_discrete("novel\nkaryotype")+
-  theme_classic(base_size=8)+
-  labs(tag="D")+
-  scale_x_discrete("distance from\nnovel karyotype")+
+  common_theme+
+  scale_x_discrete("distance from novel karyotype")+
   scale_y_continuous("population fraction")+
   theme(legend.position = c(0.7,0.9),legend.key.size = unit(0.1,"in"))
 pc
@@ -235,8 +247,7 @@ p0 <- ggplot(tmp, aes(x = Time, y = Frequency, group=Clone,fill = Clone,alpha=Cl
   guides(alpha="none")+
   scale_alpha_manual(values=c(0,1))+
   facet_wrap(~ Group2, ncol = 3) +
-  theme_classic(base_size=8)+
-  labs(tag="A")+
+  common_theme+
   scale_x_continuous("",breaks=c(1,4),labels=c(expression(S[0],S[t])))+
   scale_y_continuous("clone frequency")
 p0
@@ -257,14 +268,16 @@ anndf2 <- data.frame(x=c(1,4,-1.1),y=c(-2.5,-2.5,2.5),
 
 noaxistheme <- theme(axis.text = element_blank(),axis.title = element_blank(),
                      axis.line = element_blank(),axis.ticks = element_blank())
-
+margin_pts <- 5
+margintheme <- theme(plot.margin = margin(margin_pts,margin_pts,margin_pts,margin_pts)) 
 # Behold some circles
 pa <- ggplot() +
   geom_rect(aes(xmin = -2, xmax = 7, ymin = -3, ymax = 3),alpha=0,color="black")+
   geom_circle(aes(x0 = x0, y0 = y0, r = r), data = circles)+
   geom_text(data=anndf,aes(x=x,y=y,label=anno))+
-  labs(tag="B")+
-  theme_void(base_size=8)
+  void_theme+
+  noaxistheme+
+  margintheme
 pa
 
 pb <- ggplot() +
@@ -273,38 +286,41 @@ pb <- ggplot() +
   geom_circle(aes(x0 = x0, y0 = y0, r = r,fill=id), 
               data = circles,show.legend = F)+
   geom_text(data=anndf2,aes(x=x,y=y,label=anno),parse=F)+
-  labs(tag="C")+
-  theme_void(base_size=8)
+  void_theme+
+  noaxistheme+
+  margintheme
 pb
 
 
 
 pd <- ggplot(z,aes(x=var,y=frac))+
   geom_col()+
-  theme_classic(base_size=8)+
-  labs(tag="E")+
-  scale_x_discrete("variable predicting\nnovel karyotype",labels = scales::parse_format())+
+  common_theme+
+  scale_x_discrete("variable predicting novel karyotype",labels = scales::parse_format())+
   scale_y_continuous(paste0("fraction significant\n(p=",pthresh,")"))
 pd
 
 
 pe <- ggplot(w,aes(x=ids))+ 
   stat_count(aes(y=..count../sum(..count..)))+
-  theme_classic(base_size=8)+
-  labs(tag="F")+
-  scale_x_discrete("variable predicting\nnovel karyotype",labels = scales::parse_format())+
-  scale_y_continuous("fraction most significant")
+  common_theme+
+  scale_x_discrete("variable predicting novel karyotype",labels = scales::parse_format())+
+  scale_y_continuous("fraction most\nsignificant")
 pe
 
 frac_f_signif <- z["f","frac"]
 paste("fitness significant in",round(nrow(w)*frac_f_signif),"/",nrow(w),"tests")
 n_f_most_signif <- table(w$ids)["f"]
 paste("fitness most significant in",n_f_most_signif,"/",nrow(w),"tests")
-plt <- grid.arrange(p0,grid.arrange(pa,pb,ncol=2),
-                    grid.arrange(pc,pd,pe,ncol=3),
-                    nrow=3,heights=c(4,3.5,4))
-plot(plt)
-ggsave("figs/novel_kary_emer.png",plot=plt,width=5,height=6,units="in")
+
+sec1 <- cowplot::plot_grid(pc,pd,pe,labels=c("D","E","F"),ncol=1,label_size = base_text_size+2)
+sec2 <- cowplot::plot_grid(pa,pb,labels=c("B","C"),ncol=2,label_size = base_text_size+2)
+
+sec3 <- cowplot::plot_grid(p0,sec2,labels=c("A",""),ncol=1,label_size = base_text_size+2)
+
+plt <- cowplot::plot_grid(sec3,sec1,nrow=1,rel_widths=c(5,2))
+
+ggsave("figs/novel_kary_emer.png",plot=plt,width=180,height=90,units="mm",bg="white")
 
 
 
