@@ -508,26 +508,89 @@ plots <- list(
   pass_count=p_pass_count
 )
 
-sec1 <- plot_grid(plots$salehi_violin,plots$salehi_ecdf,plots$salehi_scatter, labels = c("B","C", "D"),label_size = base_text_size+2,nrow=3)
-sec2 <- plot_grid(plots$network_dendro,sec1, labels = c("A","", ""),label_size = base_text_size+2,nrow=1,rel_widths = c(2,1))
+sec1 <- plot_grid(plots$salehi_violin,plots$salehi_ecdf,plots$salehi_scatter, labels = c("b","c", "d"),label_size = base_text_size+2,nrow=3)
+sec2 <- plot_grid(plots$network_dendro,sec1, labels = c("a","", ""),label_size = base_text_size+2,nrow=1,rel_widths = c(2,1))
 
-sec3 <- plot_grid(plots$salehi_lineage,plots$salehi_bar, plots$ref_null,plots$pass_count, labels = c("E","F","G","H"),
+sec3 <- plot_grid(plots$salehi_lineage,plots$salehi_bar, plots$ref_null,plots$pass_count, labels = c("e","f","g","h"),
                   label_size = base_text_size+2, nrow=4,rel_heights = c(3,2,2,2))
 
 plt <- plot_grid(sec2,sec3,nrow=1,rel_widths=c(2,1))
 
 ggsave("figs/salehi_validation.png",plot=plt,width=180,height=80,units="mm", 
        bg = "white")
-# Create rows with adjustable relative widths
-top_row    <- plot_grid(plots$network_dendro, piece_3, labels = c("A", ""), rel_widths = c(2,1),nrow=1)
-
-# Combine rows vertically with adjustable heights
-combined_plot <- plot_grid(
-  top_row, piece_2,
-  ncol = 1,
-  rel_heights = c(3, 2) # Adjust these heights to fit your preference
-)
+ggsave("figs/salehi_validation.pdf",device = cairo_pdf,plt,width=180,height=80,units="mm",bg = "white",dpi=600)
 
 
+# [ ... Previous code remains exactly the same ... ]
 
+##############################################################################
+# 8. EXPORT SOURCE DATA (Nature Requirement)
+#    Saves cleaned, minimal dataframes to data/source_data/
+##############################################################################
+
+dir.create("data/source_data", showWarnings = FALSE, recursive = TRUE)
+
+# --- Panel A: Network (Nodes & Edges) ---
+# FIX: 'uid' is converted to 'name' by igraph/ggraph during layout creation
+sd_2a_nodes <- layout %>% 
+  select(uid = name, lineage, CV_Score = xval, x, y) %>%
+  mutate(CV_Score = round(CV_Score, 3))
+
+sd_2a_edges <- edges_df %>%
+  select(Parent = from, Child = to, Treatment = treatment) %>%
+  mutate(Treatment = ifelse(Treatment == "y", "On_Treatment", "Off_Treatment"))
+
+saveRDS(list(nodes=sd_2a_nodes, edges=sd_2a_edges), "data/source_data/Fig2a.Rds")
+
+# --- Panel B: Violin Plot (Model Fit) ---
+sd_2b <- x0 %>%
+  select(Num_Training_Samples = ntrain, CV_Score = xv) %>%
+  mutate(CV_Score = round(CV_Score, 4))
+saveRDS(sd_2b, "data/source_data/Fig2b.Rds")
+
+# --- Panel C: ECDF (Model vs Sisters vs Unrelated) ---
+# Combine the 4 layers of the plot into one readable table
+sd_2c <- rbind(
+  data.frame(Angle = z_euc$angle, Group = "Predicted"),
+  data.frame(Angle = subset(y, metric=="angle")$value, Group = "Forked_Sister"),
+  data.frame(Angle = z_pairs$angle, Group = "Unrelated"),
+  # For theoretical, we provide the calculated curve points
+  data.frame(Angle = nulldf$angle, Group = "Theoretical_Null") 
+) %>%
+  mutate(Angle = round(Angle, 2))
+saveRDS(sd_2c, "data/source_data/Fig2c.Rds")
+
+# --- Panel D: Scatter Plot (Wasserstein) ---
+sd_2d <- subset(x_eval, metric=="wasserstein") %>%
+  select(Actual_Distance = base, Predicted_Distance = pred0) %>%
+  mutate(
+    Actual_Distance = round(Actual_Distance, 4),
+    Predicted_Distance = round(Predicted_Distance, 4)
+  )
+saveRDS(sd_2d, "data/source_data/Fig2d.Rds")
+
+# --- Panel E: Line Plot (Time Series) ---
+sd_2e <- z %>%
+  select(Lineage = lineage, Metric = metric, Time_Days = day, Fraction_Beating_Baseline = fwin) %>%
+  mutate(Fraction_Beating_Baseline = round(Fraction_Beating_Baseline, 3))
+saveRDS(sd_2e, "data/source_data/Fig2e.Rds")
+
+# --- Panel F: Bar Plot (Aggregate Performance) ---
+sd_2f <- z_bar %>%
+  select(Lineage = type, Metric = metric, Fraction_Beating_Baseline = fwin) %>%
+  mutate(Fraction_Beating_Baseline = round(Fraction_Beating_Baseline, 3))
+saveRDS(sd_2f, "data/source_data/Fig2f.Rds")
+
+# --- Panel G: Reference Null Bar Plot ---
+sd_2g <- plot_df_ref %>%
+  select(Lineage = lineage, Metric = metric, Fraction_Beating_Baseline = win) %>%
+  mutate(Fraction_Beating_Baseline = round(Fraction_Beating_Baseline, 3))
+saveRDS(sd_2g, "data/source_data/Fig2g.Rds")
+
+# --- Panel H: Passage Counts ---
+sd_2h <- z_bar_tmp %>%
+  select(Lineage = lineage, Type = type, Count = n)
+saveRDS(sd_2h, "data/source_data/Fig2h.Rds")
+
+message("Source data saved to data/source_data/")
 

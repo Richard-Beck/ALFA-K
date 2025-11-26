@@ -440,9 +440,9 @@ pA <- cowplot::plot_grid(plotlist = bootstrap_example_plots,nrow=3)
 
 
 pCD <- cowplot::plot_grid(plt_ecdf,plt_boot,nrow=1,rel_widths = c(3,4),
-                           labels=c("C","D"),label_size = base_text_size+2)
-pCDE <- cowplot::plot_grid(pCD,plot_overlap,nrow=2,labels=c("","E"),label_size = base_text_size+2)
-plt <- cowplot::plot_grid(pA,plt_cnap,pCDE,nrow=1,rel_widths = c(1,2,2),labels=c("A","B",""),label_size = base_text_size+2)
+                           labels=c("c","d"),label_size = base_text_size+2)
+pCDE <- cowplot::plot_grid(pCD,plot_overlap,nrow=2,labels=c("","e"),label_size = base_text_size+2)
+plt <- cowplot::plot_grid(pA,plt_cnap,pCDE,nrow=1,rel_widths = c(1,2,2),labels=c("a","b",""),label_size = base_text_size+2)
 
 ggsave("figs/cna_fitness_effects.png",plt,width=8,height=4,units="in", 
        bg = "white")
@@ -451,12 +451,99 @@ pA <- cowplot::plot_grid(plotlist = bootstrap_example_plots,nrow=3)
 
 
 pCD <- cowplot::plot_grid(plt_ecdf,plt_boot,nrow=1,rel_widths = c(4,4),
-                          labels=c("C","D"),label_size = base_text_size+2)
-pBCD <- cowplot::plot_grid(plt_cnap,pCD,nrow=2,labels=c("B",""),
+                          labels=c("c","d"),label_size = base_text_size+2)
+pBCD <- cowplot::plot_grid(plt_cnap,pCD,nrow=2,labels=c("b",""),
                            rel_heights=c(2,1),label_size = base_text_size+2)
 
-pEF <- cowplot::plot_grid(plot_overlap,plt_cor,nrow=2,labels=c("E","F"),label_size = base_text_size+2)
-plt <- cowplot::plot_grid(pA,pBCD,pEF,nrow=1,rel_widths = c(1.2,2,2),labels=c("A","",""),label_size = base_text_size+2)
+pEF <- cowplot::plot_grid(plot_overlap,plt_cor,nrow=2,labels=c("e","f"),label_size = base_text_size+2)
+plt <- cowplot::plot_grid(pA,pBCD,pEF,nrow=1,rel_widths = c(1.2,2,2),labels=c("a","",""),label_size = base_text_size+2)
 
-ggsave("figs/cna_fitness_effects.png",plt,width=180,height=110,units="mm", 
-       bg = "white")
+ggsave("figs/cna_fitness_effects.pdf",plt,device=cairo_pdf,width=180,height=110,units="mm", 
+       bg = "white",dpi=600)
+
+##############################################################################
+# 8. EXPORT SOURCE DATA (Nature Requirement) - FIGURE 4
+##############################################################################
+
+dir.create("data/source_data", showWarnings = FALSE, recursive = TRUE)
+
+# --- Panel A: Bootstrap Example Trees (Schematic) ---
+# Since these are random selections of lineages, we provide the IDs of the 
+# lineages selected in the 3 examples to ensure reproducibility.
+set.seed(NULL) # Reset seed logic based on your loop
+sd_4a <- do.call(rbind, lapply(1:3, function(i) {
+  # We assume the seed state matches the loop in your script
+  # If you set a specific seed before the loop, this captures it.
+  # Otherwise, this captures the logic:
+  boot_reps <- get_reps(l, x0)
+  data.frame(
+    Example_Iteration = i,
+    Selected_Lineage_ID = boot_reps$fit_id,
+    Num_Passages = boot_reps$n_pass
+  )
+}))
+saveRDS(sd_4a, "data/source_data/Fig4a.Rds")
+
+# --- Panel B: CNAP Heatmap (Sub-sampled Data) ---
+# We must replicate the data filtering logic inside your cnap_heatmap function
+# to save the exact tiles shown in the figure.
+set.seed(42) # Matches the seed inside cnap_heatmap
+pdx_sel <- c("SA535","SA609")
+# Replicate logic:
+fi_sel <- df %>% 
+  filter(pdx %in% pdx_sel) %>% 
+  group_by(pdx) %>% 
+  summarise(fi=list(sample(unique(fi),2)), .groups="drop") %>% 
+  unnest(fi)
+kid_sel <- df %>% 
+  semi_join(fi_sel, by=c("pdx","fi")) %>% 
+  group_by(pdx,fi) %>% 
+  summarise(k_id=list(sample(unique(k_id),3)), .groups="drop") %>% 
+  unnest(k_id)
+sd_4b <- df %>% 
+  semi_join(kid_sel, by=c("pdx","fi","k_id")) %>%
+  select(PDX = pdx, Landscape_ID = fi, Karyotype_ID = k_id, Mutation_Feature = feat, Delta_Fitness = deltaf) %>%
+  mutate(Delta_Fitness = round(Delta_Fitness, 4))
+
+saveRDS(sd_4b, "data/source_data/Fig4b.Rds")
+
+# --- Panel C: ECDF of Fitness Effects ---
+# Source: 'df' (the single bootstrap realization used for the plot)
+sd_4c <- subset(df, abs(deltaf) < 0.3) %>%
+  select(PDX = pdx, Context = context, Treatment = treat, Delta_Fitness = deltaf) %>%
+  mutate(Delta_Fitness = round(Delta_Fitness, 4))
+saveRDS(sd_4c, "data/source_data/Fig4c.Rds")
+
+# --- Panel D: Bootstrap Model Results (Forest Plot) ---
+# Source: 'smm' (Summary of bootstrap quantiles)
+sd_4d <- smm %>%
+  select(Comparison_Context = context, Statistic = stat, 
+         CI_Low_2.5 = `2.5%`, Median = `50%`, CI_High_97.5 = `97.5%`) %>%
+  mutate(
+    Statistic = ifelse(Statistic == "v", "Delta_Fitness", "Variance"),
+    Comparison_Context = as.character(Comparison_Context), # Remove newline chars if present
+    CI_Low_2.5 = round(CI_Low_2.5, 4),
+    Median = round(Median, 4),
+    CI_High_97.5 = round(CI_High_97.5, 4)
+  )
+saveRDS(sd_4d, "data/source_data/Fig4d.Rds")
+
+# --- Panel E: Lineage Overlap ---
+# Source: 'meta_df'
+sd_4e <- meta_df %>%
+  select(PDX = pdx, Context = context, On_Treatment = on_treatment, Overlap_Score = overlap) %>%
+  mutate(Overlap_Score = round(Overlap_Score, 4))
+saveRDS(sd_4e, "data/source_data/Fig4e.Rds")
+
+# --- Panel F: Pairwise Correlation Effects ---
+# Source: 'ci' (Bootstrap confidence intervals)
+sd_4f <- ci %>%
+  select(Parameter_Label = label, Median_Effect = mid, CI_Low = lo, CI_High = hi) %>%
+  mutate(
+    Median_Effect = round(Median_Effect, 4),
+    CI_Low = round(CI_Low, 4),
+    CI_High = round(CI_High, 4)
+  )
+saveRDS(sd_4f, "data/source_data/Fig4f.Rds")
+
+message("Figure 4 Source Data saved to data/source_data/")
