@@ -4,6 +4,10 @@ data/proc
 data/salehi
 data/processed
 data/archive_processed.tar.gz
+data/Source_Data.xlsx
+data/curl_upload.log
+data/raw/ABM_varyMisseg/
+data/source_data/
 data/raw/ABM
 dev
 utils_old

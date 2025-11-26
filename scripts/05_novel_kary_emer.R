@@ -313,15 +313,69 @@ paste("fitness significant in",round(nrow(w)*frac_f_signif),"/",nrow(w),"tests")
 n_f_most_signif <- table(w$ids)["f"]
 paste("fitness most significant in",n_f_most_signif,"/",nrow(w),"tests")
 
-sec1 <- cowplot::plot_grid(pc,pd,pe,labels=c("D","E","F"),ncol=1,label_size = base_text_size+2)
-sec2 <- cowplot::plot_grid(pa,pb,labels=c("B","C"),ncol=2,label_size = base_text_size+2)
+sec1 <- cowplot::plot_grid(pc,pd,pe,labels=c("d","e","f"),ncol=1,label_size = base_text_size+2)
+sec2 <- cowplot::plot_grid(pa,pb,labels=c("b","c"),ncol=2,label_size = base_text_size+2)
 
-sec3 <- cowplot::plot_grid(p0,sec2,labels=c("A",""),ncol=1,label_size = base_text_size+2)
+sec3 <- cowplot::plot_grid(p0,sec2,labels=c("a",""),ncol=1,label_size = base_text_size+2)
 
 plt <- cowplot::plot_grid(sec3,sec1,nrow=1,rel_widths=c(5,2))
 
-ggsave("figs/novel_kary_emer.png",plot=plt,width=180,height=90,units="mm",bg="white")
+ggsave("figs/novel_kary_emer.pdf",plot=plt,device = cairo_pdf,width=180,height=90,units="mm",bg="white",dpi=600)
 
+##############################################################################
+# 8. EXPORT SOURCE DATA (Nature Requirement) - FIGURE 3
+##############################################################################
 
+dir.create("data/source_data", showWarnings = FALSE, recursive = TRUE)
+
+# --- Panel A: Muller Plot (Clonal Dynamics) ---
+# Source: 'tmp' dataframe
+sd_3a <- tmp %>%
+  select(Time, Clone, Frequency, Panel = Group2, Is_Highlighted = Clone2) %>%
+  mutate(Frequency = round(Frequency, 4))
+saveRDS(sd_3a, "data/source_data/Fig3a.Rds")
+
+# --- Panel B: Schematic (Venn Diagram 1) ---
+# Source: 'circles' and 'anndf'
+# Since this is a schematic, we provide the coordinates used to draw it
+sd_3b <- list(
+  Geometry = circles[, c("x0", "y0", "r", "id")],
+  Annotations = anndf[, c("x", "y", "anno")]
+)
+saveRDS(sd_3b, "data/source_data/Fig3b.Rds")
+
+# --- Panel C: Schematic (Venn Diagram 2) ---
+# Source: 'circles' and 'anndf2'
+sd_3c <- list(
+  Geometry = circles[, c("x0", "y0", "r", "id")],
+  Annotations = anndf2[, c("x", "y", "anno")]
+)
+saveRDS(sd_3c, "data/source_data/Fig3c.Rds")
+
+# --- Panel D: Bar Plot (Example Novel Karyotype) ---
+# Source: 'dfxmpl'
+sd_3d <- dfxmpl %>%
+  select(Distance_Bin = d, Group_ID = id, Population_Fraction = frac) %>%
+  mutate(Population_Fraction = round(Population_Fraction, 4))
+saveRDS(sd_3d, "data/source_data/Fig3d.Rds")
+
+# --- Panel E: Bar Plot (Fraction Significant) ---
+# Source: 'z'
+sd_3e <- z %>%
+  select(Predictor_Variable = var, Fraction_Significant = frac) %>%
+  mutate(Fraction_Significant = round(Fraction_Significant, 3))
+saveRDS(sd_3e, "data/source_data/Fig3e.Rds")
+
+# --- Panel F: Bar Plot (Fraction Most Significant) ---
+# Source: 'w'. 
+# Note: The plot calculates counts internally. We pre-calculate them here for the Source Data.
+sd_3f <- w %>%
+  group_by(Variable = ids) %>%
+  summarise(Count = n()) %>%
+  mutate(Fraction_Most_Significant = round(Count / sum(Count), 3)) %>%
+  arrange(desc(Fraction_Most_Significant))
+saveRDS(sd_3f, "data/source_data/Fig3f.Rds")
+
+message("Figure 3 Source Data saved to data/source_data/")
 
 

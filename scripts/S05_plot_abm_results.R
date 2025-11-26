@@ -489,13 +489,216 @@ midrt <- cowplot::plot_grid(plots$pe,plots$pd,labels=c("D","E"), label_size = ba
 midr <- cowplot::plot_grid(plots$pc,midrt,labels=c("C",""), label_size = base_text_size+2,nrow=1,rel_widths = c(2,3))
 
 plt <- cowplot::plot_grid(topr,midr,plots$pf,labels=c("","","F"), label_size = base_text_size+2,nrow=3,rel_heights = c(4,4,3))
-ggsave("figs/ABM_validation_p1.png",plt,width=150,height=175,units="mm",bg="white")
+ggsave("figs/ABM_validation_p1.png",plt,width=150,height=175,units="mm",bg="white") ## figure S2
 ## Final output: a list of ggplot objects
+
+df <- readRDS("data/processed/ABM_vary_misseg_summaries.Rds")
+# 2. Generate the Plot
+p <- ggplot(df, aes(x = pmis_factor, y = pearson)) +  # Changed 'pearson' to 'correlation' to match your df column name
+  geom_boxplot(fill = "lightblue", outlier.shape = NA) +
+  geom_jitter(width = 0.2, alpha = 0.4, size = 1) +
+  common_theme +
+  labs(
+    x = "Missegregation Rate (per chromosome/division)",
+    y = "Pearson Correlation (True vs. Inferred Fitness)"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(p)
+
+ggsave(filename = "figs/misseg_accuracy.png",plot=p,width=3,height=2.25,units="in") ## figure S3
 
 left <- cowplot::plot_grid(plots$p2a,plots$p2b,labels=c("A","B"), label_size = base_text_size+2,nrow=2,rel_heights = c(3,4))
 plt <- cowplot::plot_grid(left,plots$p2c,nrow=1,labels=c("","C"), label_size = base_text_size+2,rel_widths = c(3,2))
-ggsave("figs/ABM_validation_p2.png",plt,width=150,height=100,units="mm",bg="white")
+ggsave("figs/ABM_validation_p2.png",plt,width=150,height=100,units="mm",bg="white") ## figure S4
 
 plt <- cowplot::plot_grid(plots$p4b,plots$p4a,labels=c("A","B"), label_size = base_text_size+2,nrow=2)
-ggsave("figs/ABM_validation_p3.png",plt,width=150,height=100,units="mm",bg="white")
+ggsave("figs/ABM_validation_p3.png",plt,width=150,height=100,units="mm",bg="white") ## figure S5
+
+##############################################################################
+# 8. EXPORT SOURCE DATA (Nature Requirement) - SUPP FIGS S2-S5
+##############################################################################
+
+dir.create("data/source_data", showWarnings = FALSE, recursive = TRUE)
+if (!require("dplyr")) install.packages("dplyr")
+library(dplyr)
+
+# ==============================================================================
+# FIGURE S2 (ABM Validation Part 1)
+# ==============================================================================
+
+# --- Panel A: Metric Performance vs MinObs ---
+# Source: 'agg_data' (Pre-calculated in script)
+sd_s2a <- agg_data %>%
+  select(Lambda = w, MinObs = minobs, Timepoints = ntp, Metric = metric,
+         Lo_CI = lo, Median = med, Hi_CI = hi) %>%
+  mutate(Median = round(Median, 4), Lo_CI = round(Lo_CI, 4), Hi_CI = round(Hi_CI, 4))
+saveRDS(sd_s2a, "data/source_data/FigS2a.Rds")
+
+# --- Panel B: Rescaled R2 Violin ---
+# Source: 'dfl'
+sd_s2b <- dfl %>%
+  mutate(
+    Num_Freq_Bins = ifelse(nfq > 8, ">8", "<=8"),
+    Fail_Group = ifelse(Rfq > 0, "Rf^2 > 0", "Rf^2 < 0")
+  ) %>%
+  select(Fail_Group, Num_Freq_Bins, Rescaled_R2 = R) %>%
+  mutate(Rescaled_R2 = round(pmax(-1, Rescaled_R2), 4))
+saveRDS(sd_s2b, "data/source_data/FigS2b.Rds")
+
+# --- Panel C: True vs Estimated Fitness ---
+# Source: Re-run logic from plot_pc to get specific points
+ypath <- file.path("data/raw/ABM", paste0(id, ".Rds"))
+yi <- readRDS(ypath)
+wavelength <- (strsplit(id, split="_") |> unlist())[2]
+wavelength <- gsub("p", ".", wavelength) |> as.numeric()
+dirs <- list.files(file.path(base_dir, id))
+
+z_list <- lapply(dirs, function(conds) {
+  parts <- strsplit(conds, "_")[[1]]
+  minobs <- parts[2]; ntp <- parts[4]
+  lscape <- readRDS(file.path(base_dir, id, conds, "landscape.Rds"))
+  lscape <- lscape[lscape$fq, ]
+  k <- do.call(rbind, lapply(lscape$k, s2v))
+  f <- apply(k, 1, function(ki) getf(ki, wavelength, yi$true_landscape))
+  data.frame(
+    True_Fitness = f - mean(f),
+    Estimated_Fitness = lscape$mean - mean(lscape$mean),
+    MinObs = minobs,
+    Timepoints = ntp,
+    Is_Highlighted = lscape$k %in% c(k1, k2, k3)
+  )
+})
+sd_s2c <- do.call(rbind, z_list) %>%
+  mutate(True_Fitness = round(True_Fitness, 4), Estimated_Fitness = round(Estimated_Fitness, 4))
+saveRDS(sd_s2c, "data/source_data/FigS2c.Rds")
+
+# --- Panel D: Trajectories (8 samples) ---
+# Source: 'result8' list
+sd_s2d <- list(
+  Lines = result8$xp %>% 
+    select(Karyotype = Var1, Time = Var2, Frequency = value, Replicate = rep, Highlight = hi) %>%
+    mutate(Frequency = round(Frequency, 5)),
+  Points = result8$yp %>% 
+    select(Karyotype = Var1, Time = Var2, Frequency = value, Highlight = hi) %>%
+    mutate(Frequency = round(Frequency, 5))
+)
+saveRDS(sd_s2d, "data/source_data/FigS2d.Rds")
+
+# --- Panel E: Trajectories (2 samples) ---
+# Source: 'result2' list
+sd_s2e <- list(
+  Lines = result2$xp %>% 
+    select(Karyotype = Var1, Time = Var2, Frequency = value, Replicate = rep, Highlight = hi) %>%
+    mutate(Frequency = round(Frequency, 5)),
+  Points = result2$yp %>% 
+    select(Karyotype = Var1, Time = Var2, Frequency = value, Highlight = hi) %>%
+    mutate(Frequency = round(Frequency, 5))
+)
+saveRDS(sd_s2e, "data/source_data/FigS2e.Rds")
+
+# --- Panel F: Alluvial Plot (R, Nfq, etc) ---
+# Source: Re-run aggregation from plot_pf_alluvium
+sd_s2f <- dfl %>%
+  mutate(R = ifelse(!is.finite(R), -1, R)) %>%
+  group_by(
+    Timepoints = ntp,
+    Nfq_gt_8 = nfq > 8,
+    Rfq_gt_0 = Rfq > 0,
+    Lambda = gsub("p", ".", w),
+    Adj_R2_gt_0 = R > 0
+  ) %>%
+  summarise(Count = length(r), .groups = "drop")
+saveRDS(sd_s2f, "data/source_data/FigS2f.Rds")
+
+
+# ==============================================================================
+# FIGURE S3 (Missegregation Accuracy)
+# ==============================================================================
+
+# --- Panel A: Boxplot Pearson vs Misseg ---
+df <- readRDS("data/processed/ABM_vary_misseg_summaries.Rds")
+
+  sd_s3a <- df %>%
+    select(Misseg_Rate = pmis_factor, Pearson_Correlation = pearson) %>% # Updated col name based on your script comment
+    mutate(Pearson_Correlation = round(Pearson_Correlation, 4))
+  saveRDS(sd_s3a, "data/source_data/FigS3a.Rds")
+
+
+
+# ==============================================================================
+# FIGURE S4 (ABM Validation Part 2)
+# ==============================================================================
+
+# --- Panel A: R_xv statistics ---
+# Source: Re-run aggregation from plot_p2a
+sd_s4a <- dfl %>%
+  mutate(Rxv = pmax(-1, ifelse(!is.finite(Rxv), -Inf, Rxv))) %>%
+  group_by(Timepoints = ntp, MinObs = minobs, Lambda = w) %>%
+  summarise(
+    Lo_CI = quantile(Rxv, 0.1),
+    Median = quantile(Rxv, 0.5),
+    Hi_CI = quantile(Rxv, 0.9),
+    .groups = "drop"
+  ) %>%
+  mutate(across(c(Lo_CI, Median, Hi_CI), ~round(., 4)))
+saveRDS(sd_s4a, "data/source_data/FigS4a.Rds")
+
+# --- Panel B: Alluvial Rxv vs R ---
+# Source: Re-run aggregation from plot_p2b_alluvium
+sd_s4b <- dfl %>%
+  mutate(Rxv = pmax(-1, ifelse(!is.finite(Rxv), -Inf, Rxv))) %>%
+  group_by(
+    Timepoints = ntp,
+    Rxv_gt_0 = Rxv > 0,
+    Lambda = gsub("p", ".", w),
+    Adj_R2_gt_0 = R > 0
+  ) %>%
+  summarise(Count = length(r), .groups = "drop")
+saveRDS(sd_s4b, "data/source_data/FigS4b.Rds")
+
+# --- Panel C: Metrics vs Timepoints (Best Fit) ---
+# Source: Re-run filtering from plot_p2c
+y_melt <- melt(dfl, measure.vars = c("rho", "r", "R"))
+y_split <- split(y_melt, interaction(y_melt$ntp, y_melt$w, y_melt$abmrep))
+y_filtered <- do.call(rbind, lapply(y_split, function(xi) xi[xi$Rxv == max(xi$Rxv), , drop = FALSE]))
+
+sd_s4c <- y_filtered %>%
+  group_by(
+    Rxv_Positive = Rxv > 0, 
+    Timepoints = ntp, 
+    Metric = variable
+  ) %>%
+  summarise(
+    Lo_CI = quantile(value, 0.1),
+    Median = quantile(value, 0.5),
+    Hi_CI = quantile(value, 0.9),
+    .groups = "drop"
+  ) %>%
+  mutate(across(c(Lo_CI, Median, Hi_CI), ~round(., 4)))
+saveRDS(sd_s4c, "data/source_data/FigS4c.Rds")
+
+
+# ==============================================================================
+# FIGURE S5 (ABM Validation Part 3)
+# ==============================================================================
+
+# --- Panel A: ECDF of Angles (formerly p4b) ---
+# Source: 'dfp' (filtered)
+dfa_s5 <- dfp[dfp$metric == dfp$metric[1] & dfp$passage %in% c(1, 10), ]
+sd_s5a <- dfa_s5 %>%
+  select(Passage = passage, Timepoints = ntp, Angle = angle, Rxv_Positive = pos_xv) %>%
+  mutate(Angle = round(Angle, 3))
+saveRDS(sd_s5a, "data/source_data/FigS5a.Rds")
+
+# --- Panel B: Fraction Beating Baseline (formerly p4a) ---
+# Source: 'dfp' (aggregated)
+sd_s5b <- dfp %>%
+  mutate(Rxv_Positive = Rxv > 0) %>%
+  group_by(Metric = metric, Passage = passage, Timepoints = ntp, Rxv_Positive) %>%
+  summarise(Fraction_Win = mean(win, na.rm = TRUE), .groups = "drop") %>%
+  mutate(Fraction_Win = round(Fraction_Win, 4))
+saveRDS(sd_s5b, "data/source_data/FigS5b.Rds")
+
+message("Source Data for Figs S2, S3, S4, S5 saved to data/source_data/")
   

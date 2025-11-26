@@ -237,10 +237,10 @@ pc <- ggplot(dfl, aes(df, colour = wgd_str)) +
   theme(legend.position = "top")
 pc
 
-plt <- plot_grid(pa, pb, pc, nrow = 1, labels = LETTERS[1:3],
+plt <- plot_grid(pa, pb, pc, nrow = 1, labels = letters[1:3],
                  rel_widths=c(2,3,2),label_size = base_text_size+2)
 
-ggsave("figs/wgd.png", plt, width = 180, height = 60, units = "mm")
+ggsave("figs/wgd.pdf",device=cairo_pdf, plt, width = 180, height = 60, units = "mm",dpi=600)
 
 # ───────────────────────────────────────── 6 • console summary
 cat("\n== Permutation KS test ==\n")
@@ -248,3 +248,59 @@ cat("Observed D =", round(obs_stat, 3), "; p_empirical =", perm_p, "\n")
 
 cat("\n== Piecewise landscape model (lmer) ==\n")
 print(summary(mod_piece)$coefficients)
+
+
+##############################################################################
+# 8. EXPORT SOURCE DATA (Nature Requirement) - FIGURE 5
+##############################################################################
+
+dir.create("data/source_data", showWarnings = FALSE, recursive = TRUE)
+
+# --- Panel A: Divergence Kinetics (Points & Model Lines) ---
+# Source 1: Raw Points (dfdiff)
+sd_5a_points <- dfdiff %>%
+  select(Experiment_ID = plot_id, Passage = passage, 
+         WGD_Status = wgd_str, Chromosomes_Altered = avg_diff) %>%
+  mutate(Chromosomes_Altered = round(Chromosomes_Altered, 3))
+
+# Source 2: Model Lines (predictions)
+# We only export this if the model converged
+sd_5a_lines <- if (!is.null(predictions)) {
+  predictions %>%
+    select(Experiment_ID = plot_id, Passage = passage, 
+           WGD_Status = wgd_str, Predicted_Alterations = pred_avg_diff) %>%
+    mutate(Predicted_Alterations = round(Predicted_Alterations, 3))
+} else {
+  data.frame(Note = "Model fitting did not converge; no line data available.")
+}
+
+# Save as a list containing both components
+saveRDS(list(Points = sd_5a_points, Model_Fit = sd_5a_lines), "data/source_data/Fig5a.Rds")
+
+
+# --- Panel B: Landscape Shape (Fitness vs Karyotype Distance) ---
+# Source 1: Raw Points (dffit)
+sd_5b_points <- dffit %>%
+  select(Experiment_ID = plot_id, WGD_Status = wgd_str, 
+         Chromosomes_Altered = dk, Fitness = fitness) %>%
+  mutate(Fitness = round(Fitness, 4))
+
+# Source 2: Red Mean Bars (dffit_means)
+sd_5b_means <- dffit_means %>%
+  select(Experiment_ID = plot_id, WGD_Status = wgd_str, 
+         Chromosomes_Altered = dk, Mean_Fitness = fitness) %>%
+  mutate(Mean_Fitness = round(Mean_Fitness, 4))
+
+saveRDS(list(Raw_Points = sd_5b_points, Mean_Values = sd_5b_means), "data/source_data/Fig5b.Rds")
+
+
+# --- Panel C: ECDF of Fitness Effects ---
+# Source: 'dfl'
+sd_5c <- dfl %>%
+  select(Experiment_ID = plot_id, WGD_Status = wgd_str, 
+         Fitness_Effect = df, Karyotype_ID = k_id) %>%
+  mutate(Fitness_Effect = round(Fitness_Effect, 5))
+
+saveRDS(sd_5c, "data/source_data/Fig5c.Rds")
+
+message("Figure 5 Source Data saved to data/source_data/")
